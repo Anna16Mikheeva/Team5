@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, session, make_response
+from flask import Flask, request, jsonify, session, make_response, render_template, redirect, url_for
 from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
 
@@ -20,10 +20,8 @@ CORS(app,
 
 # Дополнительные настройки для кук
 app.config.update(
-    SESSION_COOKIE_SAMESITE='None',
-    SESSION_COOKIE_SECURE=True,
-    SESSION_COOKIE_HTTPONLY=True,
-    SESSION_COOKIE_DOMAIN='localhost'
+    SESSION_COOKIE_SAMESITE='Lax',  # или 'None' если нужно
+    SESSION_COOKIE_SECURE=False,    # отключаем Secure для локальной разработки
 )
 
 # Конфигурация подключения к PostgreSQL
@@ -41,12 +39,20 @@ class Person(db.Model):
     Email = db.Column(db.String(100), unique=True)
     Password = db.Column(db.String(100))
 
+# Маршрут для отображения welcome страницы
+@app.route('/welcome')  # Изменили на '/welcome'
+def welcome():
+    print("Текущая сессия:", session) 
+    user_id = session.get('user_id')
+    if not user_id:
+        return redirect(url_for('index'))
+    user = Person.query.filter_by(Id=user_id).first()
+    return render_template('welcome.html', name=user.Name)  # Убедитесь, что файл существует
 
-@app.route('/api/login', methods=['OPTIONS'])
-def handle_login_options():
-    response = jsonify()
-    response.headers.add('Access-Control-Allow-Headers', 'Content-Type')
-    return response
+# Предположим, что у вас есть index.html или другая стартовая страница
+@app.route('/')
+def index():
+    return render_template('index.html')
 
 # API: регистрация
 @app.route('/api/register', methods=['POST'])
@@ -67,18 +73,13 @@ def api_register():
     db.session.add(new_user)
     db.session.commit()
 
+    # После регистрации сохраняем сессию и редиректим на страницу welcom.html
+    session['user_id'] = new_user.Id
     return jsonify({'message': 'Пользователь зарегистрирован', 'user_id': new_user.Id})
 
 # API: вход
-@app.route('/api/login', methods=['POST', 'OPTIONS'])
+@app.route('/api/login', methods=['POST'])
 def api_login():
-    if request.method == 'OPTIONS':
-        response = make_response()
-        response.headers.add('Access-Control-Allow-Origin', 'http://localhost:8000')
-        response.headers.add('Access-Control-Allow-Credentials', 'true')
-        response.headers.add('Access-Control-Allow-Headers', 'Content-Type')
-        return response
-
     data = request.get_json()
     email = data.get('email')
     password = data.get('password')
@@ -86,24 +87,23 @@ def api_login():
     user = Person.query.filter_by(Email=email).first()
     if user and user.Password == password:
         session['user_id'] = user.Id
-        response = jsonify({
+        # Возвращаем JSON с флагом для редиректа
+        return jsonify({
             'message': 'Успешный вход',
-            'user_id': user.Id,
+            'redirect': '/welcome',  # Добавляем URL для редиректа
             'name': user.Name
         })
-        response.headers.add('Access-Control-Allow-Origin', 'http://localhost:8000')
-        response.headers.add('Access-Control-Allow-Credentials', 'true')
-        return response
     else:
         return jsonify({'error': 'Неверный логин или пароль'}), 401
 
 # API: выход
 @app.route('/api/logout', methods=['POST'])
-def api_logout():
-    session.pop('user_id', None)
-    return jsonify({'message': 'Выход выполнен'})
+def logout():
+    session.clear()
+    return jsonify({"message": "Вы вышли из системы"}), 200
 
-# API: проверка авторизации и получение приветствия
+
+# API: проверка авторизации и получение приветствия (можно использовать для проверки статуса)
 @app.route('/api/welcome', methods=['GET'])
 def api_welcome():
     user_id = session.get('user_id')
@@ -112,7 +112,9 @@ def api_welcome():
     user = Person.query.filter_by(Id=user_id).first()
     if not user:
         return jsonify({'error': 'Пользователь не найден'}), 404
-    return jsonify({'message': f'Привет, {user.Name}!'})
+    
+    # Можно возвращать сообщение или просто статус
+    return jsonify({'message': f'Привет!'})
 
 if __name__ == '__main__':
     app.run(debug=True)

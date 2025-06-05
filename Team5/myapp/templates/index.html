@@ -11,14 +11,19 @@ async function register() {
 
   const response = await fetch('http://localhost:5000/api/register', {
     method: 'POST',
-    headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({name, email, password})
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({ name, email, password })
   });
-  const result = await response.json();
+
   if (response.ok) {
-    alert(result.message);
+    const result = await response.json();
+    if (result.redirect) {
+     window.location.href = 'http://localhost:5000/welcome';  // Редирект
+    }
   } else {
-    alert(result.error);
+    const error = await response.json();
+    alert(error.error);
   }
 }
 
@@ -29,33 +34,25 @@ async function login() {
   try {
     const response = await fetch('http://localhost:5000/api/login', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
-      },
-      credentials: 'include',
-      mode: 'cors',
-      body: JSON.stringify({
-        email: email,
-        password: password
-      })
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',  // Важно для кук!
+      body: JSON.stringify({ email, password })
     });
 
     if (!response.ok) {
-      const error = await response.text();
-      throw new Error(error || 'Login failed');
+      const error = await response.json();
+      throw new Error(error.error || 'Ошибка входа');
     }
 
-    
     const result = await response.json();
-    localStorage.setItem('user_id', result.user_id);
-    localStorage.setItem('name', result.name);
-    showWelcome();
+    if (result.redirect) {
+     window.location.href = 'http://localhost:5000/welcome';  // Редирект на /welcom
+    }
   } catch (error) {
-    console.error('Login error:', error);
     alert(error.message);
   }
 }
+
 async function logout() {
   await fetch('http://localhost:5000/api/logout', {method:'POST'});
   localStorage.removeItem('user_id');
