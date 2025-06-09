@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<title>Перечень любимых предметов в школе</title>
+<script>
+  function checkAuth() {
+    fetch('/api/welcome', {
+        method: 'GET',
+        credentials: 'include'
+    })
+    .then(response => {
+        if (!response.ok) throw new Error('Не авторизован');
+        return response.json();
+    })
+    .then(data => {
+        // Показываем контент для авторизованных
+        document.getElementById('content').style.display = 'block';
+        document.getElementById('not_authorized').style.display = 'none';
+        
+        // Можно добавить отображение имени пользователя, если нужно
+        // document.getElementById('username').innerText = data.name;
+    })
+    .catch(error => {
+        // Показываем блок для неавторизованных
+        document.getElementById('not_authorized').style.display = 'block';
+        document.getElementById('content').style.display = 'none';
+    });
+  }
+
+  function submitForm() {
+    // Проверка чекбоксов и полей (ваш существующий код)
+    const sections = [
+      {name: 'subjects', message: 'Пожалуйста, выберите хотя бы один любимый предмет в первом разделе.'},
+      {name: 'subjects2', message: 'Пожалуйста, выберите хотя бы один предмет во втором разделе.'},
+      {name: 'exams', message: 'Пожалуйста, выберите хотя бы один сданный экзамен.'}
+    ];
+
+    for (const section of sections) {
+      const checkboxes = document.querySelectorAll(`input[name="${section.name}"]:checked`);
+      if (checkboxes.length === 0) {
+        alert(section.message);
+        return;
+      }
+    }
+
+    const likeField = document.getElementById('like_field');
+    const dislikeField = document.getElementById('dislike_field');
+
+    if (!likeField.value.trim()) {
+      alert('Пожалуйста, заполните поле "Мне нравится".');
+      return;
+    }
+
+    if (!dislikeField.value.trim()) {
+      alert('Пожалуйста, заполните поле "Мне не нравится".');
+      return;
+    }
+
+    const container = document.getElementById('greeting_container');
+    container.innerHTML = '';
+    
+    const greetingText = document.createTextNode('Привет');
+    const btn = document.createElement('button');
+    btn.innerText = 'Отправить заявку';
+    btn.onclick = () => alert('Заявка отправлена!');
+
+    container.appendChild(greetingText);
+    container.appendChild(document.createTextNode(' '));
+    container.appendChild(btn);
+  }
+</script>
+</head>
+<body>
+
+<div id="not_authorized" style="display:none;">
+  <h2>Доступ запрещён. Авторизуйтесь, чтобы просматривать страницу.</h2>
+</div>
+
+<div id="content" style="display:none;">
+
+    <h2>Перечень любимых предметов в школе</h2>
+<div>
+<label><input type="checkbox" name="subjects" value="Математика"> Математика</label><br/>
+<label><input type="checkbox" name="subjects" value="История"> История</label><br/>
+<label><input type="checkbox" name="subjects" value="Физика"> Физика</label><br/>
+<label><input type="checkbox" name="subjects" value="Биология"> Биология</label><br/>
+<label><input type="checkbox" name="subjects" value="География"> География</label><br/>
+</div>
+
+<h2>Перечень не любимых предметов в школе</h2>
+<div>
+<label><input type="checkbox" name="subjects2" value="Математика"> Математика</label><br/>
+<label><input type="checkbox" name="subjects2" value="История"> История</label><br/>
+<label><input type="checkbox" name="subjects2" value="Физика"> Физика</label><br/>
+<label><input type="checkbox" name="subjects2" value="Биология"> Биология</label><br/>
+<label><input type="checkbox" name="subjects2" value="География"> География</label><br/>
+</div>
+
+<h2>Сданные экзамены</h2>
+<div>
+<label><input type='checkbox' name='exams' value='Математика'> Математика</label><br/>
+<label><input type='checkbox' name='exams' value='История'> История</label><br/>
+<label><input type='checkbox' name='exams' value='Физика'> Физика</label><br/>
+<label><input type='checkbox' name='exams' value='Биология'> Биология</label><br/>
+<label><input type='checkbox' name='exams' value='География'> География</label><br/>
+</div>
+
+<h3>Мне нравится:</h3>
+<input type="text" id="like_field" placeholder="Что вам нравится?"/>
+
+<h3>Мне не нравится:</h3>
+<input type="text" id="dislike_field" placeholder="Что вам не нравится?"/>
+
+<!-- Кнопка "Отправить" -->
+<br/><button onclick="submitForm()">Отправить</button>
+
+<!-- Область для сообщения и кнопки после отправки -->
+<div id="greeting_container"></div>
+
+<script>
+  // Инициализация при загрузке
+  document.addEventListener('DOMContentLoaded', checkAuth);
+</script>
+
+</div>
+
+</body>
+</html>

@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Выбор факультета</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Программа помощи в выборе факультета</h1>
+        <form method="POST">
+            {% for q_idx, question in enumerate(questions) %}
+                <div class="question">
+                    <h3>Вопрос {{ q_idx + 1 }}: {{ question.question }}</h3>
+                    {% for opt_idx, option in enumerate(question.options) %}
+                        <label>
+                            <input type="radio" name="q{{ q_idx }}" value="{{ opt_idx }}" required>
+                            {{ option }}
+                        </label><br>
+                    {% endfor %}
+                </div>
+            {% endfor %}
+            <button type="submit">Получить результат</button>
+        </form>
+    </div>
+</body>
+</html>
